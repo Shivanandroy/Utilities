@@ -1,3 +1,23 @@
+
+#plotting 3 columns at a time
+
+plt.subplots(figsize=(12,15))
+m=0
+n=3
+length= iris.shape[1]
+
+for i in range(length):
+
+    plt.subplot(np.ceil(length/3),1,i+1)
+
+    iris.iloc[:,m:n].boxplot()
+    
+    m=n
+    n=m+n
+    
+    
+
+    
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun  2 18:23:47 2017
