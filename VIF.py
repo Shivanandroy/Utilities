@@ -1,3 +1,5 @@
+#############
+
 def calculate_vif(DataFrame, thresh=5.0):
     '''
     DataFrame = Input Dataframe
@@ -32,3 +34,11 @@ def calculate_vif(DataFrame, thresh=5.0):
     
     #print('\n')   
     return X.iloc[:,variables], pd.DataFrame(vif, index=X.columns[variables].tolist(), columns=['VIF'])
+
+################################################### Correlation #############################################################
+corr_matrix = df.corr().abs()
+
+#the matrix is symmetric so we need to extract upper triangle matrix without diagonal (k = 1)
+os = (corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool))
+                 .stack()
+                 .sort_values(ascending=False)).reset_index()
