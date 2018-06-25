@@ -48,3 +48,19 @@ print("The best hyperparameters are: ", "\n")
 print(best_param)
 end = time.time()
 print('Time elapsed to optimize {0} executions: {1}'.format(n,end - start))
+
+
+
+# Predicting with the best parameters obtained with HyperOpt:
+dtrain = xgboost.DMatrix(train_x, label=train_y)
+dvalid = xgboost.DMatrix(test_x, label=test_y)
+watchlist = [(dvalid, 'eval'),(dtrain, 'train')]
+gbm_model = xgboost.train(params={'alpha': 5.0, 'booster': 'gbtree', 'colsample_bytree': 0.9500000000000001, 'eta': 0.05, 'gamma': 0.75, 'lambda': 1.2000000000000002, 'max_depth': 2, 'min_child_weight': 8.0, 'nthread': 32, 'objective': 'binary:logistic', 'seed': 0, 'subsample': 0.9, 'eval_metric':'auc'}, 
+                              dtrain=dtrain, 
+                              num_boost_round=int(best_param['n_estimators']),
+                              early_stopping_rounds=20,
+                              evals=watchlist,
+                              verbose_eval=True)
+predictions = gbm_model.predict(dvalid, ntree_limit=gbm_model.best_iteration+1)
+
+print(roc_auc_score(test_y,predictions))
