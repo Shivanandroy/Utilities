@@ -1,3 +1,7 @@
+import xgboost
+from hyperopt import fmin, tpe, Trials, hp, STATUS_OK
+import time
+
 def score(params):
     num_round = int(params['n_estimators'])
     del params['n_estimators']
@@ -10,7 +14,9 @@ def score(params):
                               evals=watchlist,
                               verbose_eval=False)
     predictions = gbm_model.predict(dvalid, ntree_limit=gbm_model.best_iteration)
-    print(roc_auc_score(test_y, np.array(predictions)))
+    print(params)
+    print('ROC AUC Score: ', roc_auc_score(test_y, np.array(predictions)))
+    print('\n')
     loss = 1 - roc_auc_score(test_y, np.array(predictions))
     return {'loss': loss, 'status': STATUS_OK}
  
@@ -37,7 +43,7 @@ def optimize(evals, cores, trials, optimizer=tpe.suggest, random_state=0):
 
 trials = Trials()
 cores = 32
-n= 1000
+n= 100
 start = time.time()
 best_param = optimize(evals = n,
                       optimizer=tpe.suggest,
@@ -49,16 +55,14 @@ print(best_param)
 end = time.time()
 print('Time elapsed to optimize {0} executions: {1}'.format(n,end - start))
 
-
-
 # Predicting with the best parameters obtained with HyperOpt:
 dtrain = xgboost.DMatrix(train_x, label=train_y)
 dvalid = xgboost.DMatrix(test_x, label=test_y)
 watchlist = [(dvalid, 'eval'),(dtrain, 'train')]
-gbm_model = xgboost.train(params={'alpha': 5.0, 'booster': 'gbtree', 'colsample_bytree': 0.9500000000000001, 'eta': 0.05, 'gamma': 0.75, 'lambda': 1.2000000000000002, 'max_depth': 2, 'min_child_weight': 8.0, 'nthread': 32, 'objective': 'binary:logistic', 'seed': 0, 'subsample': 0.9, 'eval_metric':'auc'}, 
+gbm_model = xgboost.train(params={**best_param, 'eval_metric':'auc'}, 
                               dtrain=dtrain, 
                               num_boost_round=int(best_param['n_estimators']),
-                              early_stopping_rounds=20,
+                              early_stopping_rounds=30,
                               evals=watchlist,
                               verbose_eval=True)
 predictions = gbm_model.predict(dvalid, ntree_limit=gbm_model.best_iteration+1)
